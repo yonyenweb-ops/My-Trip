@@ -1,4 +1,5 @@
 import { daysBetween, todayDate } from "./dates";
+import type { Currency } from "./money";
 import type { AppData, Expense, Trip } from "./types";
 
 // Totals are always derived from the expense list, never stored,
@@ -51,6 +52,24 @@ export function spendingByCategory(expenses: Expense[]) {
   const totals = new Map<string, number>();
   for (const e of expenses) totals.set(e.category, (totals.get(e.category) ?? 0) + e.amount);
   return [...totals].map(([category, total]) => ({ category, total })).sort((a, b) => b.total - a.total);
+}
+
+const DEFAULT_BUDGETS: Record<Currency, number[]> = {
+  USD: [50, 100, 200, 300, 500],
+  KHR: [100000, 200000, 400000, 800000, 1000000],
+};
+
+/**
+ * Quick amounts for a trip's starting money: the user's past budgets first
+ * (newest trip first), then round defaults. Dollars or whole riel, max 6 each.
+ */
+export function budgetSuggestions(trips: Trip[], excludeId?: string): Record<Currency, number[]> {
+  const past = trips.filter((t) => t.id !== excludeId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const pick = (recent: number[], defaults: number[]) => [...new Set([...recent.slice(0, 3), ...defaults])].slice(0, 6);
+  return {
+    USD: pick(past.filter((t) => !t.original).map((t) => t.startingAmount / 100), DEFAULT_BUDGETS.USD),
+    KHR: pick(past.flatMap((t) => (t.original ? [t.original.amount] : [])), DEFAULT_BUDGETS.KHR),
+  };
 }
 
 /** The trip the dashboard shows: the most recently created active trip. */

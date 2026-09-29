@@ -3,7 +3,8 @@
 import { useParams, useRouter } from "next/navigation";
 import { BackLink, Loading, TripNotFound } from "@/components/States";
 import { TripForm } from "@/components/TripForm";
-import { updateTrip } from "@/lib/storage";
+import { budgetSuggestions } from "@/lib/calc";
+import { updateTrip, useAppData } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 import { useTrip } from "@/lib/useTrip";
 
@@ -11,8 +12,9 @@ export default function EditTripPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const state = useTrip(id);
+  const data = useAppData();
 
-  if (state.loading) return <Loading />;
+  if (state.loading || !data) return <Loading />;
   const { trip } = state;
   if (!trip) return <TripNotFound />;
 
@@ -23,6 +25,7 @@ export default function EditTripPage() {
       <TripForm
         trip={trip}
         submitLabel="Save Changes"
+        suggestions={budgetSuggestions(data.trips, trip.id)}
         onSubmit={(input) => {
           updateTrip(trip.id, input);
           showToast("Trip updated");

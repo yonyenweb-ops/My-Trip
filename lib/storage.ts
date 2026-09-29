@@ -59,7 +59,7 @@ const newId = () =>
 
 // ---- Trips ----
 
-export type TripInput = Pick<Trip, "name" | "startingAmount" | "startDate" | "endDate" | "note">;
+export type TripInput = Pick<Trip, "name" | "startingAmount" | "original" | "startDate" | "endDate" | "note">;
 
 export function createTrip(input: TripInput): string {
   const data = read();

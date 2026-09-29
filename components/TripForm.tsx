@@ -2,33 +2,42 @@
 
 import { useState, type FormEvent } from "react";
 import { todayDate } from "@/lib/dates";
-import { centsToInput, parseAmount } from "@/lib/money";
+import { KHR_PER_USD, centsToInput, moneyInputError, parseMoneyInput, type Currency } from "@/lib/money";
 import type { TripInput } from "@/lib/storage";
 import type { Trip } from "@/lib/types";
+import { MoneyInput } from "./MoneyInput";
 
 type Errors = Partial<Record<"name" | "amount" | "startDate" | "endDate", string>>;
 
 type Props = {
   trip?: Trip; // when set, the form edits this trip
   submitLabel: string;
+  /** Quick amounts for the starting money (past budgets + round numbers). */
+  suggestions: Record<Currency, number[]>;
   onSubmit: (input: TripInput) => void;
 };
 
 /** Create/edit trip form. Render only in the browser so "today" uses the phone's time zone. */
-export function TripForm({ trip, submitLabel, onSubmit }: Props) {
+export function TripForm({ trip, submitLabel, suggestions, onSubmit }: Props) {
   const [name, setName] = useState(trip?.name ?? "");
-  const [amount, setAmount] = useState(trip ? centsToInput(trip.startingAmount) : "");
+  const [currency, setCurrency] = useState<Currency>(trip?.original ? "KHR" : "USD");
+  const [amount, setAmount] = useState<string>(
+    trip ? (trip.original ? String(trip.original.amount) : centsToInput(trip.startingAmount)) : "",
+  );
   const [startDate, setStartDate] = useState(trip?.startDate ?? todayDate());
   const [endDate, setEndDate] = useState(trip?.endDate ?? "");
   const [note, setNote] = useState(trip?.note ?? "");
   const [errors, setErrors] = useState<Errors>({});
 
+  // A riel budget keeps the rate it was saved with; new riel budgets use today's fixed rate.
+  const rate = trip?.original?.rate ?? KHR_PER_USD;
+  const { riel, cents } = parseMoneyInput(currency, amount, rate);
+
   function submit(e: FormEvent) {
     e.preventDefault();
-    const cents = parseAmount(amount);
     const next: Errors = {};
     if (!name.trim()) next.name = "Trip name is required";
-    if (cents === null) next.amount = "Enter an amount greater than 0, like 210.54";
+    if (cents === null) next.amount = moneyInputError(currency, riel, "210.54");
     if (!startDate) next.startDate = "Start date is required";
     if (endDate && startDate && endDate < startDate) next.endDate = "End date can't be before the start date";
     setErrors(next);
@@ -37,6 +46,7 @@ export function TripForm({ trip, submitLabel, onSubmit }: Props) {
     onSubmit({
       name: name.trim(),
       startingAmount: cents,
+      original: riel !== null ? { currency: "KHR", amount: riel, rate } : undefined,
       startDate,
       endDate: endDate || undefined,
       note: note.trim() || undefined,
@@ -61,27 +71,21 @@ export function TripForm({ trip, submitLabel, onSubmit }: Props) {
         {errors.name && <p className="error">{errors.name}</p>}
       </div>
 
-      <div>
-        <label htmlFor="amount" className="label">
-          Starting Money
-        </label>
-        <div className="relative">
-          <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-2xl font-bold text-faint">
-            $
-          </span>
-          <input
-            id="amount"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            aria-invalid={!!errors.amount}
-            className="input h-14 pl-10 text-2xl font-bold tabular-nums"
-          />
-        </div>
-        {errors.amount && <p className="error">{errors.amount}</p>}
-      </div>
+      <MoneyInput
+        id="amount"
+        label="Starting Money"
+        currency={currency}
+        onCurrencyChange={setCurrency}
+        value={amount}
+        onChange={(v) => {
+          setAmount(v);
+          setErrors((e) => ({ ...e, amount: undefined }));
+        }}
+        suggestions={suggestions}
+        rate={rate}
+        error={errors.amount}
+        size="md"
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <div>

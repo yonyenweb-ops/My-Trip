@@ -39,6 +39,24 @@ export function formatRiel(riel: number): string {
   return `${riel.toLocaleString("en-US")}៛`;
 }
 
+export type Currency = "USD" | "KHR";
+
+/** What a money input means in cents, plus the whole riel typed when in riel mode. */
+export function parseMoneyInput(currency: Currency, input: string, rate = KHR_PER_USD) {
+  if (currency === "KHR") {
+    const riel = parseRiel(input);
+    return { riel, cents: riel === null ? null : rielToCents(riel, rate) || null };
+  }
+  return { riel: null, cents: parseAmount(input) };
+}
+
+export function moneyInputError(currency: Currency, riel: number | null, example: string): string {
+  if (currency === "KHR") {
+    return riel === null ? "Enter riel as a whole number, like 20000" : "Amount is too small (less than $0.01)";
+  }
+  return `Enter an amount greater than 0, like ${example}`;
+}
+
 /** Cents -> plain input value, e.g. 1050 -> "10.50". */
 export function centsToInput(cents: number): string {
   return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;

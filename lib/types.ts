@@ -6,6 +6,8 @@ export interface Trip {
   id: string;
   name: string;
   startingAmount: number;
+  // Set when the starting money was entered in riel; `startingAmount` holds the converted cents.
+  original?: { currency: "KHR"; amount: number; rate: number };
   startDate: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
   note?: string;

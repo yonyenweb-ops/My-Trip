@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { daysLeft, spentToday, tripStats } from "@/lib/calc";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatRiel } from "@/lib/money";
 import type { Expense, Trip } from "@/lib/types";
 import { BudgetProgress } from "./BudgetProgress";
 import { MoneyCard } from "./MoneyCard";
@@ -40,7 +40,11 @@ export function TripOverview({ trip, expenses, action }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <MoneyCard label="Starting Money" cents={trip.startingAmount} />
+        <MoneyCard
+          label="Starting Money"
+          cents={trip.startingAmount}
+          hint={trip.original ? `from ${formatRiel(trip.original.amount)}` : undefined}
+        />
         <MoneyCard label="Total Spent" cents={s.spent} hint={`${s.count} ${s.count === 1 ? "expense" : "expenses"}`} />
         {trip.status === "active" && <MoneyCard label="Spent today" cents={today} />}
         {perDay !== null && (

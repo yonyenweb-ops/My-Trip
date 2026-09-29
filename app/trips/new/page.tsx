@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Loading } from "@/components/States";
 import { TripForm } from "@/components/TripForm";
+import { budgetSuggestions } from "@/lib/calc";
 import { createTrip, useAppData } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 
@@ -20,6 +21,7 @@ export default function NewTripPage() {
       {data ? (
         <TripForm
           submitLabel="Create Trip"
+          suggestions={budgetSuggestions(data.trips)}
           onSubmit={(input) => {
             createTrip(input);
             showToast(`${input.name} created`);
