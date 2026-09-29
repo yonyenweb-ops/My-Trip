@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), "Noto Sans Khmer", system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-slate-50 text-slate-900 antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-600 px-5 font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 font-semibold text-slate-800 hover:bg-slate-50 active:bg-slate-100;
+  }
+  .btn-danger {
+    @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-red-600 px-5 font-semibold text-white hover:bg-red-700 active:bg-red-800;
+  }
+  .btn-danger-outline {
+    @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-red-200 bg-white px-5 font-semibold text-red-600 hover:bg-red-50;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-slate-700;
+  }
+  /* 16px+ font keeps iOS from zooming into inputs */
+  .input {
+    @apply block h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/30 aria-invalid:border-red-500;
+  }
+  .error {
+    @apply mt-1.5 text-sm font-medium text-red-600;
+  }
 }
