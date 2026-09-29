@@ -70,8 +70,34 @@ const ERRORS: Record<string, string> = {
   "language-not-supported": "This language isn't supported on this device. Try English.",
 };
 
+/**
+ * Every iPhone/iPad browser (Chrome too) must use Apple's speech engine, which has no Khmer.
+ * iPadOS reports itself as a Mac, so also check for touch.
+ */
+export function isAppleMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+}
+
+export const KHMER_IOS_MESSAGE =
+  "iPhone can't recognize Khmer speech. Type it below, or use the 🎤 on a keyboard that supports Khmer (like Gboard).";
+
+/** Use text typed or dictated with the keyboard's mic, exactly like a spoken sentence. */
+export function submitVoiceText(text: string) {
+  const t = text.trim();
+  if (!t) return;
+  rec?.abort();
+  rec = null;
+  set({ status: "idle", transcript: t });
+  if (onFinal) onFinal(t);
+}
+
 /** Start listening. Call this directly from a tap/click handler. */
 export function startVoice(lang: VoiceLang = getVoiceLang()) {
+  if (lang === "km-KH" && isAppleMobile()) {
+    set({ status: "error", transcript: "", error: KHMER_IOS_MESSAGE });
+    return;
+  }
   const Ctor = getCtor();
   if (!Ctor) {
     set({ status: "error", transcript: "", error: "Voice isn't supported in this browser. Use the 🎤 key on your keyboard instead." });

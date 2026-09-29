@@ -1,6 +1,15 @@
 "use client";
 
-import { setVoiceLang, startVoice, stopVoice, useVoiceLang, useVoiceState } from "@/lib/voice-session";
+import { useState } from "react";
+import {
+  KHMER_IOS_MESSAGE,
+  setVoiceLang,
+  startVoice,
+  stopVoice,
+  submitVoiceText,
+  useVoiceLang,
+  useVoiceState,
+} from "@/lib/voice-session";
 import { MicIcon } from "./Icons";
 
 const EXAMPLES = {
@@ -8,11 +17,22 @@ const EXAMPLES = {
   "km-KH": "“កាហ្វេ ២ពាន់រៀល” · “តុកតុក ៥ ដុល្លារ”",
 };
 
-/** Mic button + live transcript at the top of the Add Expense form. */
+/** Mic button + live transcript at the top of the Add Expense form, with a type/dictate fallback. */
 export function VoiceBar({ note }: { note?: string }) {
   const voice = useVoiceState();
   const lang = useVoiceLang();
   const listening = voice.status === "listening";
+  const [typing, setTyping] = useState(false);
+  const [text, setText] = useState("");
+  // When the mic can't be used (e.g. Khmer on iPhone), offer the text box right away.
+  const showText = typing || voice.status === "error";
+
+  function fill() {
+    if (!text.trim()) return;
+    submitVoiceText(text);
+    setText("");
+    setTyping(false);
+  }
 
   return (
     <div className={`rounded-2xl border p-3 transition-colors ${listening ? "border-brand bg-brand-soft" : "border-line bg-soft"}`}>
@@ -37,7 +57,8 @@ export function VoiceBar({ note }: { note?: string }) {
               <div className="truncate text-ink">{voice.transcript || "Say the item and the price"}</div>
             </>
           ) : voice.status === "error" ? (
-            <div className="font-medium text-danger">{voice.error}</div>
+            // Khmer on iPhone is a device limit, not a mistake, so it isn't shown in red.
+            <div className={`font-medium ${voice.error === KHMER_IOS_MESSAGE ? "text-ink" : "text-danger"}`}>{voice.error}</div>
           ) : voice.transcript ? (
             <>
               <div className="truncate">
@@ -67,6 +88,34 @@ export function VoiceBar({ note }: { note?: string }) {
           ))}
         </div>
       </div>
+
+      {showText ? (
+        <div className="mt-3 flex gap-2">
+          <input
+            aria-label="Type or dictate the expense"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter fills the form instead of submitting the whole expense.
+              if (e.key === "Enter") {
+                e.preventDefault();
+                fill();
+              }
+            }}
+            placeholder={lang === "km-KH" ? "e.g. កាហ្វេ ២ពាន់រៀល" : "e.g. Coffee 2 dollars"}
+            className="input h-11 min-w-0 flex-1 bg-card text-base"
+          />
+          <button type="button" onClick={fill} className="btn-primary min-h-11 px-4">
+            Fill
+          </button>
+        </div>
+      ) : (
+        !listening && (
+          <button type="button" onClick={() => setTyping(true)} className="mt-1 text-xs font-semibold text-brand-text">
+            Or type / use your keyboard’s 🎤
+          </button>
+        )
+      )}
     </div>
   );
 }
