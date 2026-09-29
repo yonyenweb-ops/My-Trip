@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import type { VoiceLang } from "./voice";
 
 // Browser speech recognition (Chrome, Edge, Safari). Kept outside React so listening can start
 // directly inside a tap handler (browsers require that), before the expense form has opened.
@@ -26,7 +25,6 @@ export interface VoiceState {
   error?: string;
 }
 
-const LANG_KEY = "trip-money-voice-lang";
 let state: VoiceState = { status: "idle", transcript: "" };
 let rec: Recognition | null = null;
 let pendingFinal: string | null = null;
@@ -46,20 +44,8 @@ function getCtor(): RecognitionCtor | null {
 
 export const isVoiceSupported = () => getCtor() !== null;
 
-export function getVoiceLang(): VoiceLang {
-  try {
-    return localStorage.getItem(LANG_KEY) === "km-KH" ? "km-KH" : "en-US";
-  } catch {
-    return "en-US";
-  }
-}
-
-export function setVoiceLang(lang: VoiceLang) {
-  try {
-    localStorage.setItem(LANG_KEY, lang);
-  } catch {}
-  listeners.forEach((l) => l());
-}
+// Voice is English only: it's much more accurate than Khmer, and iPhone can't recognize Khmer at all.
+const VOICE_LANG = "en-US";
 
 const ERRORS: Record<string, string> = {
   "not-allowed": "Microphone is blocked. Allow the microphone for this site in your browser settings.",
@@ -67,20 +53,8 @@ const ERRORS: Record<string, string> = {
   "no-speech": "Didn't hear anything. Tap 🎤 and try again.",
   "audio-capture": "No microphone found.",
   network: "Voice needs an internet connection.",
-  "language-not-supported": "This language isn't supported on this device. Try English.",
+  "language-not-supported": "English voice isn't supported on this device. Type it instead.",
 };
-
-/**
- * Every iPhone/iPad browser (Chrome too) must use Apple's speech engine, which has no Khmer.
- * iPadOS reports itself as a Mac, so also check for touch.
- */
-export function isAppleMobile(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-}
-
-export const KHMER_IOS_MESSAGE =
-  "iPhone can't recognize Khmer speech. Type it below, or use the 🎤 on a keyboard that supports Khmer (like Gboard).";
 
 /** Use text typed or dictated with the keyboard's mic, exactly like a spoken sentence. */
 export function submitVoiceText(text: string) {
@@ -93,11 +67,7 @@ export function submitVoiceText(text: string) {
 }
 
 /** Start listening. Call this directly from a tap/click handler. */
-export function startVoice(lang: VoiceLang = getVoiceLang()) {
-  if (lang === "km-KH" && isAppleMobile()) {
-    set({ status: "error", transcript: "", error: KHMER_IOS_MESSAGE });
-    return;
-  }
+export function startVoice() {
   const Ctor = getCtor();
   if (!Ctor) {
     set({ status: "error", transcript: "", error: "Voice isn't supported in this browser. Use the 🎤 key on your keyboard instead." });
@@ -106,7 +76,7 @@ export function startVoice(lang: VoiceLang = getVoiceLang()) {
   rec?.abort();
   const r = new Ctor();
   rec = r;
-  r.lang = lang;
+  r.lang = VOICE_LANG;
   r.interimResults = true;
   r.continuous = false;
   r.maxAlternatives = 1;
@@ -165,9 +135,6 @@ export function useVoiceState(): VoiceState {
   return useSyncExternalStore(subscribe, () => state, () => state);
 }
 
-export function useVoiceLang(): VoiceLang {
-  return useSyncExternalStore(subscribe, getVoiceLang, () => "en-US" as VoiceLang);
-}
 
 /** Calls `handler` with each finished sentence while the component is mounted. */
 export function useVoiceResult(handler: (text: string) => void) {

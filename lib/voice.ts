@@ -3,8 +3,6 @@
 
 import type { Currency } from "./money";
 
-export type VoiceLang = "en-US" | "km-KH";
-
 export interface VoiceExpense {
   amount?: string; // value for the amount field, in `currency` units
   currency?: Currency;
