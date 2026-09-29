@@ -63,7 +63,55 @@ function findKhmerNumber(text: string): { value: number; start: number; end: num
   return null;
 }
 
-/** First number in the text, including "2.50", "5,000", "$3", "2k", "2 thousand", "២ពាន់". */
+// English number words: phones often write small numbers as words ("food five dollars").
+const EN_UNITS: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+  ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16,
+  seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50,
+  sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const EN_MULT: Record<string, number> = { hundred: 100, thousand: 1000, million: 1000000 };
+
+/** Finds the first run of English number words, e.g. "twenty five" = 25, "two point five" = 2.5. */
+function findEnglishNumber(text: string): { value: number; start: number; end: number } | null {
+  const words = [...text.matchAll(/[a-z]+/gi)].map((m) => ({ w: m[0].toLowerCase(), start: m.index, end: m.index + m[0].length }));
+  const isNum = (i: number) =>
+    !!words[i] && (words[i].w in EN_UNITS || words[i].w in EN_MULT || (words[i].w === "a" && words[i + 1]?.w in EN_MULT));
+
+  for (let i = 0; i < words.length; i++) {
+    if (!isNum(i)) continue;
+    let total = 0;
+    let current = 0;
+    let j = i;
+    for (; j < words.length; j++) {
+      const { w } = words[j];
+      if (w === "a" && isNum(j)) current = 1;
+      else if (w in EN_UNITS) current += EN_UNITS[w];
+      else if (w === "hundred") current = (current || 1) * 100;
+      else if (w in EN_MULT) {
+        total += (current || 1) * EN_MULT[w];
+        current = 0;
+      } else if (w === "and" && isNum(j + 1)) continue;
+      else break;
+    }
+    let value = total + current;
+    let end = words[j - 1].end;
+    // "two point five" -> 2.5
+    if (words[j]?.w === "point") {
+      let decimals = "";
+      let k = j + 1;
+      for (; k < words.length && words[k].w in EN_UNITS && EN_UNITS[words[k].w] < 10; k++) decimals += EN_UNITS[words[k].w];
+      if (decimals) {
+        value = Number(`${value}.${decimals}`);
+        end = words[k - 1].end;
+      }
+    }
+    if (value > 0) return { value, start: words[i].start, end };
+  }
+  return null;
+}
+
+/** First number in the text: "2.50", "5,000", "$3", "2k", "2 thousand", "២ពាន់", "ពីរពាន់", "five". */
 function findNumber(text: string): { value: number; start: number; end: number } | null {
   const m = /(\d[\d,]*(?:\.\d+)?)\s*(k\b|thousand\b|hundred\b|million\b|រយ|ពាន់|ម៉ឺន|សែន|លាន)?/i.exec(text);
   if (m) {
@@ -71,7 +119,7 @@ function findNumber(text: string): { value: number; start: number; end: number }
     const mult = m[2] ? MULTIPLIERS[m[2].toLowerCase()] : 1;
     if (Number.isFinite(base) && base > 0) return { value: base * mult, start: m.index, end: m.index + m[0].length };
   }
-  return findKhmerNumber(text);
+  return findKhmerNumber(text) ?? findEnglishNumber(text);
 }
 
 const RIEL = /riel|reil|\breal\b|៛|រៀល|\bkhr\b/i;
@@ -131,7 +179,11 @@ export function parseVoiceExpense(transcript: string): VoiceExpense {
   }
 
   const rest = num ? text.slice(0, num.start) + " " + text.slice(num.end) : text;
-  const cleaned = rest.replace(FILLER, " ").replace(/\s+/g, " ").trim();
+  const cleaned = rest
+    .replace(FILLER, " ")
+    .replace(/[.,!?;:។]+/g, " ") // leftover punctuation from the speech engine
+    .replace(/\s+/g, " ")
+    .trim();
   const description = cleaned ? cleaned[0].toUpperCase() + cleaned.slice(1) : "";
 
   return { amount, currency, category, description };
