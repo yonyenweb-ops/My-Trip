@@ -25,6 +25,25 @@ function wasDismissed() {
 // iPhone/iPad Safari has no install button; the user must use Share → Add to Home Screen.
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone();
 
+/** The iOS Share symbol: a box with an arrow pointing up. */
+function ShareIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="-mt-1 inline h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v12M8 7l4-4 4 4" />
+      <path d="M8 11H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-2" />
+    </svg>
+  );
+}
+
 /** Small banner offering to install the app on the home screen. */
 export function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
@@ -71,7 +90,7 @@ export function InstallPrompt() {
         <div className="text-emerald-800">
           {ios ? (
             <>
-              Tap <b>Share</b> <span aria-hidden>⎋</span> then <b>Add to Home Screen</b>
+              Tap <b>•••</b> → <b>Share</b> <ShareIcon /> → <b>Add to Home Screen</b>
             </>
           ) : (
             "Open it like an app, even offline"
