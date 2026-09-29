@@ -22,8 +22,13 @@ function wasDismissed() {
   }
 }
 
-// iPhone/iPad Safari has no install button; the user must use Share → Add to Home Screen.
-const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone();
+// iPhone/iPad browsers have no install button; the user must use Share → Add to Home Screen.
+// Chrome keeps Share in the address bar, Safari keeps it in the ••• menu.
+const iosBrowser = (): "chrome" | "safari" | null => {
+  const ua = navigator.userAgent;
+  if (!/iphone|ipad|ipod/i.test(ua) || isStandalone()) return null;
+  return /CriOS/i.test(ua) ? "chrome" : "safari";
+};
 
 /** The iOS Share symbol: a box with an arrow pointing up. */
 function ShareIcon() {
@@ -49,7 +54,7 @@ export function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const hidden = useSyncExternalStore(noopSubscribe, () => isStandalone() || wasDismissed(), () => true);
-  const ios = useSyncExternalStore(noopSubscribe, isIos, () => false);
+  const ios = useSyncExternalStore(noopSubscribe, iosBrowser, () => null);
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -88,7 +93,11 @@ export function InstallPrompt() {
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-semibold text-emerald-900">Install Trip Money</div>
         <div className="text-emerald-800">
-          {ios ? (
+          {ios === "chrome" ? (
+            <>
+              Tap <ShareIcon /> <b>Share</b> at the top right → <b>Add to Home Screen</b>
+            </>
+          ) : ios === "safari" ? (
             <>
               Tap <b>•••</b> → <b>Share</b> <ShareIcon /> → <b>Add to Home Screen</b>
             </>
