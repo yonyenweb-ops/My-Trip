@@ -3,12 +3,16 @@ import { tripStats } from "@/lib/calc";
 import { formatDateRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import type { Expense, Trip } from "@/lib/types";
+import { ChevronRightIcon } from "./Icons";
 
 export function StatusBadge({ status }: { status: Trip["status"] }) {
   return status === "active" ? (
-    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">Active</span>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-text">
+      <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
+      Active
+    </span>
   ) : (
-    <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">Completed</span>
+    <span className="rounded-full bg-soft px-2.5 py-0.5 text-xs font-semibold text-muted">Completed</span>
   );
 }
 
@@ -17,34 +21,33 @@ export function TripCard({ trip, expenses }: { trip: Trip; expenses: Expense[] }
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="block rounded-3xl border border-slate-200 bg-white p-4 active:bg-slate-50 hover:border-slate-300"
+      className="card group flex h-full flex-col p-4 transition hover:border-brand/40 hover:shadow-sm active:scale-[0.99] sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-lg font-semibold">{trip.name}</div>
-          <div className="text-sm text-slate-500">{formatDateRange(trip.startDate, trip.endDate)}</div>
+          <div className="truncate text-lg font-bold">{trip.name}</div>
+          <div className="text-sm text-muted">{formatDateRange(trip.startDate, trip.endDate)}</div>
         </div>
         <StatusBadge status={trip.status} />
       </div>
-      <dl className="mt-3 grid grid-cols-3 gap-2 text-sm tabular-nums">
+
+      <div className="mt-4 flex items-end justify-between gap-3">
         <div>
-          <dt className="text-slate-500">Budget</dt>
-          <dd className="font-semibold">{formatMoney(trip.startingAmount)}</dd>
+          <div className="text-xs font-medium text-muted">{s.overBudget ? "Over budget" : "Remaining"}</div>
+          <div className={`text-2xl font-bold tabular-nums ${s.overBudget ? "text-danger" : ""}`}>{formatMoney(s.remaining)}</div>
         </div>
-        <div>
-          <dt className="text-slate-500">Spent</dt>
-          <dd className="font-semibold">{formatMoney(s.spent)}</dd>
-        </div>
-        <div>
-          <dt className="text-slate-500">Remaining</dt>
-          <dd className={`font-semibold ${s.overBudget ? "text-red-600" : "text-emerald-700"}`}>{formatMoney(s.remaining)}</dd>
-        </div>
-      </dl>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <ChevronRightIcon size={20} className="mb-1 text-faint transition group-hover:translate-x-0.5" />
+      </div>
+
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-soft">
         <div
-          className={`h-full rounded-full ${s.overBudget ? "bg-red-600" : "bg-emerald-600"}`}
+          className={`h-full rounded-full ${s.overBudget ? "bg-danger" : "bg-brand"}`}
           style={{ width: `${Math.min(100, s.percent)}%` }}
         />
+      </div>
+      <div className="mt-2 flex justify-between text-xs text-muted tabular-nums">
+        <span>Spent {formatMoney(s.spent)}</span>
+        <span>Budget {formatMoney(trip.startingAmount)}</span>
       </div>
     </Link>
   );

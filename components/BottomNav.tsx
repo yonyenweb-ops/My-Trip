@@ -2,36 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NAV_ITEMS, isNavActive } from "./NavLinks";
 
-const ITEMS = [
-  { href: "/", label: "Home", icon: "🏠" },
-  { href: "/trips", label: "My Trips", icon: "🧳" },
-  { href: "/trips/new", label: "New Trip", icon: "➕" },
-];
-
+/** Phone navigation, pinned to the bottom for one-handed use. Hidden on tablet/desktop. */
 export function BottomNav() {
   const path = usePathname();
-  const isActive = (href: string) =>
-    href === "/trips" ? path === "/trips" || (path.startsWith("/trips/") && path !== "/trips/new") : path === href;
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-3">
-        {ITEMS.map((item) => {
-          const active = isActive(item.href);
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const active = isNavActive(href, path);
           return (
-            <li key={item.href}>
+            <li key={href}>
               <Link
-                href={item.href}
+                href={href}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
-                  active ? "text-emerald-700" : "text-slate-500"
+                className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
+                  active ? "text-brand-text" : "text-muted"
                 }`}
               >
-                <span className="text-xl" aria-hidden>
-                  {item.icon}
+                <span className={`flex h-7 w-14 items-center justify-center rounded-full ${active ? "bg-brand-soft" : ""}`}>
+                  <Icon size={21} />
                 </span>
-                {item.label}
+                {label}
               </Link>
             </li>
           );

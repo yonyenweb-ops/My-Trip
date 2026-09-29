@@ -1,39 +1,98 @@
 @import "tailwindcss";
 
+/* Semantic color tokens: every component uses these, so dark mode is one switch below. */
 @theme inline {
   --font-sans: var(--font-geist-sans), "Noto Sans Khmer", system-ui, sans-serif;
+  --color-app: var(--app);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
 }
 
 :root {
+  --app: #f5f7f6;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --muted: #5b6776;
+  --faint: #94a3b8;
+  --line: #e3e8ec;
+  --soft: #eef2f4;
+  --brand: #059669;
+  --brand-strong: #047857;
+  --brand-soft: #e8f7f0;
+  --brand-text: #047857;
+  --danger: #dc2626;
+  --danger-soft: #fdeeee;
   color-scheme: light;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app: #0b1211;
+    --card: #131c1b;
+    --ink: #e8efed;
+    --muted: #9aa8a5;
+    --faint: #66756f;
+    --line: #22302e;
+    --soft: #1b2624;
+    --brand: #059669;
+    --brand-strong: #047857;
+    --brand-soft: #10271f;
+    --brand-text: #34d399;
+    --danger: #f87171;
+    --danger-soft: #2b1718;
+    color-scheme: dark;
+  }
+}
+
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-app text-ink antialiased;
   -webkit-tap-highlight-color: transparent;
 }
 
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-brand;
+}
+
 @layer components {
+  .card {
+    @apply rounded-3xl border border-line bg-card;
+  }
   .btn-primary {
-    @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-emerald-600 px-5 font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand px-5 font-semibold text-white shadow-sm transition-colors hover:bg-brand-strong active:scale-[0.98] disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 font-semibold text-slate-800 hover:bg-slate-50 active:bg-slate-100;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line bg-card px-5 font-semibold text-ink transition-colors hover:bg-soft active:scale-[0.98];
   }
   .btn-danger {
-    @apply inline-flex min-h-12 items-center justify-center rounded-2xl bg-red-600 px-5 font-semibold text-white hover:bg-red-700 active:bg-red-800;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 font-semibold text-white transition-colors hover:bg-red-700 active:scale-[0.98];
   }
   .btn-danger-outline {
-    @apply inline-flex min-h-12 items-center justify-center rounded-2xl border border-red-200 bg-white px-5 font-semibold text-red-600 hover:bg-red-50;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-line bg-card px-5 font-semibold text-danger transition-colors hover:bg-danger-soft active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-muted transition-colors hover:bg-soft hover:text-ink;
   }
   .label {
-    @apply mb-1.5 block text-sm font-semibold text-slate-700;
+    @apply mb-1.5 block text-sm font-semibold text-ink;
   }
   /* 16px+ font keeps iOS from zooming into inputs */
   .input {
-    @apply block h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/30 aria-invalid:border-red-500;
+    @apply block h-12 w-full rounded-2xl border border-line bg-card px-4 text-base text-ink outline-none placeholder:text-faint focus:border-brand focus:ring-2 focus:ring-brand/25 aria-invalid:border-danger;
   }
   .error {
-    @apply mt-1.5 text-sm font-medium text-red-600;
+    @apply mt-1.5 text-sm font-medium text-danger;
+  }
+  .section-title {
+    @apply text-base font-semibold text-ink;
   }
 }

@@ -76,6 +76,7 @@ function patchTrip(id: string, patch: Partial<Trip>) {
   });
 }
 
+export const updateTrip = (id: string, input: TripInput) => patchTrip(id, input);
 export const closeTrip = (id: string) => patchTrip(id, { status: "completed", closedAt: now() });
 export const reopenTrip = (id: string) => patchTrip(id, { status: "active", closedAt: undefined });
 
@@ -91,9 +92,17 @@ export function deleteTrip(id: string) {
 
 export type ExpenseInput = Pick<Expense, "amount" | "category" | "description" | "date" | "original">;
 
-export function addExpense(tripId: string, input: ExpenseInput) {
+export function addExpense(tripId: string, input: ExpenseInput): string {
   const data = read();
   const expense: Expense = { ...input, id: newId(), tripId, createdAt: now(), updatedAt: now() };
+  write({ ...data, expenses: [...data.expenses, expense] });
+  return expense.id;
+}
+
+/** Put back an expense exactly as it was (used by "Undo" after deleting). */
+export function restoreExpense(expense: Expense) {
+  const data = read();
+  if (data.expenses.some((e) => e.id === expense.id)) return;
   write({ ...data, expenses: [...data.expenses, expense] });
 }
 

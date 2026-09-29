@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { CATEGORIES } from "@/lib/categories";
-import { nowTime, splitDateTime, todayDate } from "@/lib/dates";
+import { dayLabel, formatTime, nowTime, splitDateTime, todayDate } from "@/lib/dates";
 import {
   KHR_PER_USD,
   centsToInput,
@@ -12,36 +12,46 @@ import {
   parseRiel,
   rielToCents,
 } from "@/lib/money";
-import { addExpense, updateExpense } from "@/lib/storage";
+import { addExpense, deleteExpense, updateExpense } from "@/lib/storage";
+import { showToast } from "@/lib/toast";
 import type { Expense } from "@/lib/types";
+import { CalendarIcon, TrashIcon } from "./Icons";
 
 type Props = {
   tripId: string;
   expense?: Expense; // when set, the form edits this expense
   onDone: () => void;
+  onDelete?: () => void; // edit mode: ask to delete this expense
 };
 
+type Currency = "USD" | "KHR";
 type Errors = Partial<Record<"amount" | "category" | "date", string>>;
 
-export function ExpenseForm({ tripId, expense, onDone }: Props) {
+const QUICK: Record<Currency, number[]> = {
+  USD: [1, 2, 5, 10, 20],
+  KHR: [1000, 2000, 5000, 10000, 20000],
+};
+
+export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
   const initial = expense ? splitDateTime(expense.date) : { date: todayDate(), time: nowTime() };
-  const [currency, setCurrency] = useState<"USD" | "KHR">(expense?.original ? "KHR" : "USD");
+  const [currency, setCurrency] = useState<Currency>(expense?.original ? "KHR" : "USD");
   const [amount, setAmount] = useState(
     expense ? (expense.original ? String(expense.original.amount) : centsToInput(expense.amount)) : "",
   );
-  const amountRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState(expense?.category ?? "");
   const [description, setDescription] = useState(expense?.description ?? "");
   const [date, setDate] = useState(initial.date);
   const [time, setTime] = useState(initial.time);
+  const [editingDate, setEditingDate] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
+  const amountRef = useRef<HTMLInputElement>(null);
 
   // Riel keeps the rate it was saved with; new riel entries use today's fixed rate.
   const rate = expense?.original?.rate ?? KHR_PER_USD;
   const riel = currency === "KHR" ? parseRiel(amount) : null;
   const cents = currency === "KHR" ? (riel === null ? null : rielToCents(riel, rate) || null) : parseAmount(amount);
 
-  function switchCurrency(next: "USD" | "KHR") {
+  function switchCurrency(next: Currency) {
     if (next === currency) return;
     setCurrency(next);
     setAmount("");
@@ -61,7 +71,10 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
           : "Enter an amount greater than 0, like 10 or 2.50";
     }
     if (!category) next.category = "Pick a category";
-    if (!date) next.date = "Date is required";
+    if (!date) {
+      next.date = "Date is required";
+      setEditingDate(true);
+    }
     setErrors(next);
     if (cents === null || Object.keys(next).length) return;
 
@@ -72,26 +85,37 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
       date: `${date}T${time || "00:00"}`,
       original: riel !== null ? { currency: "KHR" as const, amount: riel, rate } : undefined,
     };
-    if (expense) updateExpense(expense.id, input);
-    else addExpense(tripId, input);
+    if (expense) {
+      updateExpense(expense.id, input);
+      showToast("Changes saved");
+    } else {
+      const id = addExpense(tripId, input);
+      showToast(`Added ${input.description || category} −${formatMoney(cents)}`, {
+        label: "Undo",
+        onClick: () => deleteExpense(id),
+      });
+    }
     onDone();
   }
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5">
+      {/* Amount */}
       <div>
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className="mb-1.5 flex items-center justify-between gap-3">
           <label htmlFor="amount" className="label mb-0">
             Amount
           </label>
-          <div role="group" aria-label="Currency" className="flex rounded-xl bg-slate-100 p-1 text-sm font-semibold">
+          <div role="group" aria-label="Currency" className="flex rounded-xl bg-soft p-1 text-sm font-semibold">
             {(["USD", "KHR"] as const).map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => switchCurrency(c)}
                 aria-pressed={currency === c}
-                className={`min-h-9 rounded-lg px-3 ${currency === c ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
+                className={`min-h-9 rounded-lg px-3 transition-colors ${
+                  currency === c ? "bg-card text-brand-text shadow-sm" : "text-muted"
+                }`}
               >
                 {c === "USD" ? "$ Dollar" : "៛ Riel"}
               </button>
@@ -99,7 +123,7 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
           </div>
         </div>
         <div className="relative">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-bold text-slate-400">
+          <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-3xl font-bold text-faint">
             {currency === "USD" ? "$" : "៛"}
           </span>
           <input
@@ -112,24 +136,41 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             aria-invalid={!!errors.amount}
-            className="input h-16 pl-10 text-3xl font-bold tabular-nums"
+            aria-describedby={currency === "KHR" ? "amount-help" : undefined}
+            className="input h-16 pl-11 text-3xl font-bold tabular-nums"
           />
         </div>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1" aria-label="Quick amounts">
+          {QUICK[currency].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => {
+                setAmount(String(v));
+                setErrors((e) => ({ ...e, amount: undefined }));
+              }}
+              className="min-h-9 shrink-0 rounded-full border border-line bg-card px-3.5 text-sm font-semibold text-muted tabular-nums hover:border-brand hover:text-brand-text"
+            >
+              {currency === "USD" ? `$${v}` : formatRiel(v)}
+            </button>
+          ))}
+        </div>
         {currency === "KHR" && (
-          <p className="mt-1.5 text-sm text-slate-500" aria-live="polite">
+          <p id="amount-help" className="mt-1 text-sm text-muted" aria-live="polite">
             {riel !== null && cents !== null ? (
               <>
-                {formatRiel(riel)} = <span className="font-bold text-emerald-700">{formatMoney(cents)}</span>
+                {formatRiel(riel)} = <span className="font-bold text-brand-text">{formatMoney(cents)}</span>
+                <span className="text-faint"> · $1 = {formatRiel(rate)}</span>
               </>
             ) : (
-              "Enter riel, it converts to dollars"
-            )}{" "}
-            <span className="text-slate-400">· $1 = {formatRiel(rate)}</span>
+              <span className="text-faint">Converts to dollars at $1 = {formatRiel(rate)}</span>
+            )}
           </p>
         )}
         {errors.amount && <p className="error">{errors.amount}</p>}
       </div>
 
+      {/* Category */}
       <fieldset>
         <legend className="label">Category</legend>
         <div className="grid grid-cols-4 gap-2">
@@ -139,15 +180,18 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
               <button
                 key={c.name}
                 type="button"
-                onClick={() => setCategory(c.name)}
+                onClick={() => {
+                  setCategory(c.name);
+                  setErrors((e) => ({ ...e, category: undefined }));
+                }}
                 aria-pressed={selected}
-                className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-2xl border px-1 py-2 text-[11px] font-medium leading-tight ${
+                className={`flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] leading-tight font-semibold transition-colors ${
                   selected
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600"
-                    : "border-slate-200 bg-white text-slate-600"
+                    ? "border-brand bg-brand-soft text-brand-text ring-2 ring-brand"
+                    : "border-line bg-card text-muted hover:bg-soft"
                 }`}
               >
-                <span className="text-xl" aria-hidden>
+                <span className="text-[22px] leading-none" aria-hidden>
                   {c.emoji}
                 </span>
                 {c.name}
@@ -158,9 +202,10 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
         {errors.category && <p className="error">{errors.category}</p>}
       </fieldset>
 
+      {/* Description */}
       <div>
         <label htmlFor="description" className="label">
-          Description <span className="font-normal text-slate-400">(optional)</span>
+          Description <span className="font-normal text-faint">(optional)</span>
         </label>
         <input
           id="description"
@@ -171,32 +216,52 @@ export function ExpenseForm({ tripId, expense, onDone }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="date" className="label">
-            Date
-          </label>
-          <input
-            id="date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-invalid={!!errors.date}
-            className="input"
-          />
-          {errors.date && <p className="error">{errors.date}</p>}
+      {/* Date & time: collapsed to one line, since it's usually "now" */}
+      {editingDate ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="date" className="label">
+              Date
+            </label>
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-invalid={!!errors.date}
+              className="input"
+            />
+            {errors.date && <p className="error">{errors.date}</p>}
+          </div>
+          <div>
+            <label htmlFor="time" className="label">
+              Time
+            </label>
+            <input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input" />
+          </div>
         </div>
-        <div>
-          <label htmlFor="time" className="label">
-            Time
-          </label>
-          <input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className="input" />
+      ) : (
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-soft px-4 py-2.5">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <CalendarIcon size={18} className="text-muted" />
+            {date ? dayLabel(date) : "No date"}
+            {time && `, ${formatTime(`${date}T${time}`)}`}
+          </span>
+          <button type="button" onClick={() => setEditingDate(true)} className="btn-ghost -mr-2 text-brand-text">
+            Change
+          </button>
         </div>
-      </div>
+      )}
 
-      <button type="submit" className="btn-primary w-full text-lg">
+      <button type="submit" className="btn-primary h-14 w-full text-lg">
         {expense ? "Save Changes" : "Add Expense"}
       </button>
+
+      {expense && onDelete && (
+        <button type="button" onClick={onDelete} className="btn-danger-outline w-full">
+          <TrashIcon size={18} /> Delete expense
+        </button>
+      )}
     </form>
   );
 }

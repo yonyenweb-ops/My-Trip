@@ -14,7 +14,7 @@ type Props = {
 export function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm, onCancel }: Props) {
   return (
     <Modal title={title} onClose={onCancel}>
-      <p className="mb-6 text-slate-600">{message}</p>
+      <p className="mb-6 text-muted">{message}</p>
       <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={onCancel} className="btn-secondary">
           Cancel

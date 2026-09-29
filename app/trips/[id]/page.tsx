@@ -6,11 +6,13 @@ import { useState } from "react";
 import { AddExpenseButton } from "@/components/AddExpenseButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ExpenseList } from "@/components/ExpenseList";
-import { Loading, TripNotFound } from "@/components/States";
+import { CheckIcon, PencilIcon, ReportIcon, TrashIcon } from "@/components/Icons";
+import { BackLink, Loading, TripNotFound } from "@/components/States";
 import { StatusBadge } from "@/components/TripCard";
 import { TripOverview } from "@/components/TripOverview";
 import { formatDateRange } from "@/lib/dates";
 import { closeTrip, deleteTrip, reopenTrip } from "@/lib/storage";
+import { showToast } from "@/lib/toast";
 import { useTrip } from "@/lib/useTrip";
 
 export default function TripDetailPage() {
@@ -25,52 +27,78 @@ export default function TripDetailPage() {
   const active = trip.status === "active";
 
   return (
-    <div className="space-y-5">
-      <Link href="/trips" className="inline-block py-1 text-sm font-semibold text-slate-500">
-        ← My Trips
-      </Link>
+    <>
+      <BackLink href="/trips" label="My Trips" />
 
-      <header>
-        <div className="flex items-center gap-2">
-          <h1 className="min-w-0 truncate text-2xl font-bold">{trip.name}</h1>
-          <StatusBadge status={trip.status} />
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="min-w-0 truncate text-2xl font-bold tracking-tight md:text-3xl">{trip.name}</h1>
+            <StatusBadge status={trip.status} />
+          </div>
+          <p className="text-sm text-muted">{formatDateRange(trip.startDate, trip.endDate)}</p>
+          {trip.note && <p className="mt-2 whitespace-pre-line text-muted">{trip.note}</p>}
         </div>
-        <p className="text-sm text-slate-500">{formatDateRange(trip.startDate, trip.endDate)}</p>
-        {trip.note && <p className="mt-2 whitespace-pre-line text-slate-600">{trip.note}</p>}
+        <Link href={`/trips/${trip.id}/edit`} className="btn-ghost -mr-2">
+          <PencilIcon size={16} /> Edit
+        </Link>
       </header>
 
-      <TripOverview trip={trip} expenses={expenses} />
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-4 lg:sticky lg:top-8">
+          <TripOverview
+            trip={trip}
+            expenses={expenses}
+            action={active ? <AddExpenseButton tripId={trip.id} variant="inline" /> : undefined}
+          />
 
-      {active ? (
-        <AddExpenseButton tripId={trip.id} />
-      ) : (
-        <Link href={`/trips/${trip.id}/summary`} className="btn-primary h-14 w-full text-lg">
-          View Trip Summary
-        </Link>
+          <div className="grid grid-cols-2 gap-3">
+            <Link href={`/trips/${trip.id}/summary`} className={active ? "btn-secondary" : "btn-primary col-span-2 h-14"}>
+              <ReportIcon size={18} /> {active ? "Summary" : "View Trip Summary"}
+            </Link>
+            {active ? (
+              <button type="button" onClick={() => setConfirm("close")} className="btn-secondary">
+                <CheckIcon size={18} /> Close Trip
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  reopenTrip(trip.id);
+                  showToast("Trip reopened");
+                }}
+                className="btn-secondary"
+              >
+                Reopen Trip
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirm("delete")}
+              className={`btn-danger-outline ${active ? "col-span-2" : ""}`}
+            >
+              <TrashIcon size={18} /> Delete
+            </button>
+          </div>
+        </div>
+
+        <section>
+          <h2 className="section-title mb-3">
+            Expense history <span className="font-normal text-faint">· {expenses.length}</span>
+          </h2>
+          <ExpenseList expenses={expenses} editable={active} />
+          {!active && expenses.length > 0 && (
+            <p className="mt-3 text-center text-xs text-faint">Reopen the trip to edit expenses.</p>
+          )}
+        </section>
+      </div>
+
+      {active && (
+        <>
+          <div className="h-20 md:hidden" aria-hidden />
+          <AddExpenseButton tripId={trip.id} variant="floating" />
+        </>
       )}
-
-      <section>
-        <h2 className="mb-2 font-semibold">Expense history</h2>
-        <ExpenseList expenses={expenses} editable={active} />
-        {!active && expenses.length > 0 && (
-          <p className="mt-2 text-center text-xs text-slate-400">Reopen the trip to edit expenses.</p>
-        )}
-      </section>
-
-      <section className="grid grid-cols-2 gap-3 pt-2">
-        {active ? (
-          <button type="button" onClick={() => setConfirm("close")} className="btn-secondary">
-            Close Trip
-          </button>
-        ) : (
-          <button type="button" onClick={() => reopenTrip(trip.id)} className="btn-secondary">
-            Reopen Trip
-          </button>
-        )}
-        <button type="button" onClick={() => setConfirm("delete")} className="btn-danger-outline">
-          Delete Trip
-        </button>
-      </section>
 
       {confirm === "close" && (
         <ConfirmDialog
@@ -94,9 +122,10 @@ export default function TripDetailPage() {
           onConfirm={() => {
             router.replace("/trips");
             deleteTrip(trip.id);
+            showToast("Trip deleted");
           }}
         />
       )}
-    </div>
+    </>
   );
 }

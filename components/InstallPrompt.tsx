@@ -87,12 +87,12 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="mb-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+    <div className="mb-5 flex items-center gap-3 rounded-2xl border border-brand/25 bg-brand-soft p-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl" />
       <div className="min-w-0 flex-1 text-sm">
-        <div className="font-semibold text-emerald-900">Install Trip Money</div>
-        <div className="text-emerald-800">
+        <div className="font-semibold">Install Trip Money</div>
+        <div className="text-muted">
           {ios === "chrome" ? (
             <>
               Tap <ShareIcon /> <b>Share</b> at the top right → <b>Add to Home Screen</b>
@@ -115,7 +115,7 @@ export function InstallPrompt() {
         type="button"
         onClick={dismiss}
         aria-label="Dismiss"
-        className="flex h-10 w-8 shrink-0 items-center justify-center text-xl text-emerald-700"
+        className="flex h-10 w-8 shrink-0 items-center justify-center text-xl text-brand-text"
       >
         ×
       </button>

@@ -3,26 +3,22 @@ import { formatMoney } from "@/lib/money";
 type Props = {
   label: string;
   cents: number;
-  tone?: "default" | "good" | "bad";
-  large?: boolean;
+  hint?: string;
+  tone?: "default" | "bad";
 };
 
-const TONES = {
-  default: "bg-white text-slate-900 border-slate-200",
-  good: "bg-emerald-600 text-white border-emerald-600",
-  bad: "bg-red-600 text-white border-red-600",
-};
-
-export function MoneyCard({ label, cents, tone = "default", large }: Props) {
+/** Small stat tile: a label and an easy-to-read amount. */
+export function MoneyCard({ label, cents, hint, tone = "default" }: Props) {
   return (
-    <div className={`rounded-3xl border p-4 ${TONES[tone]}`}>
-      <div className={`text-sm font-medium ${tone === "default" ? "text-slate-500" : "text-white/85"}`}>{label}</div>
+    <div className="card px-4 py-3 sm:p-4">
+      <div className="text-[13px] font-medium text-muted sm:text-sm">{label}</div>
       <div
-        className={`mt-1 font-bold tracking-tight tabular-nums ${large ? "text-5xl" : "text-2xl"}`}
+        className={`mt-0.5 text-xl font-bold tracking-tight tabular-nums sm:mt-1 sm:text-2xl ${tone === "bad" ? "text-danger" : ""}`}
         style={{ overflowWrap: "anywhere" }}
       >
         {formatMoney(cents)}
       </div>
+      {hint && <div className="mt-0.5 text-xs text-faint">{hint}</div>}
     </div>
   );
 }

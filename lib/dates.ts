@@ -30,6 +30,29 @@ export const formatDate = (value: string) =>
 export const formatTime = (value: string) =>
   parseLocal(value).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
+/** "Today", "Yesterday", or e.g. "Mon, Sep 28" for a YYYY-MM-DD day. */
+export function dayLabel(day: string, now = new Date()): string {
+  const today = todayDate(now);
+  const yesterday = todayDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  if (day === today) return "Today";
+  if (day === yesterday) return "Yesterday";
+  const d = parseLocal(day);
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(d.getFullYear() !== now.getFullYear() && { year: "numeric" }),
+  });
+}
+
+/** Whole days from `from` to `to` (both YYYY-MM-DD). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((parseLocal(to).getTime() - parseLocal(from).getTime()) / 86_400_000);
+}
+
+/** "Aug 10 – Aug 12, 2026"; the year is repeated only when the dates are in different years. */
 export function formatDateRange(start: string, end?: string): string {
-  return end && end !== start ? `${formatDate(start)} – ${formatDate(end)}` : formatDate(start);
+  if (!end || end === start) return formatDate(start);
+  const sameYear = start.slice(0, 4) === end.slice(0, 4);
+  return `${sameYear ? formatDay(start) : formatDate(start)} – ${formatDate(end)}`;
 }
