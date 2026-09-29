@@ -6,7 +6,8 @@ import { useState } from "react";
 import { AddExpenseButton } from "@/components/AddExpenseButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ExpenseList } from "@/components/ExpenseList";
-import { CheckIcon, PencilIcon, ReportIcon, TrashIcon } from "@/components/Icons";
+import { ActionMenu } from "@/components/ActionMenu";
+import { CheckIcon, PencilIcon, ReportIcon, TrashIcon, UndoIcon } from "@/components/Icons";
 import { BackLink, Loading, TripNotFound } from "@/components/States";
 import { StatusBadge } from "@/components/TripCard";
 import { TripOverview } from "@/components/TripOverview";
@@ -30,7 +31,7 @@ export default function TripDetailPage() {
     <>
       <BackLink href="/trips" label="My Trips" />
 
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+      <header className="mb-5 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="min-w-0 truncate text-2xl font-bold tracking-tight md:text-3xl">{trip.name}</h1>
@@ -39,9 +40,24 @@ export default function TripDetailPage() {
           <p className="text-sm text-muted">{formatDateRange(trip.startDate, trip.endDate)}</p>
           {trip.note && <p className="mt-2 whitespace-pre-line text-muted">{trip.note}</p>}
         </div>
-        <Link href={`/trips/${trip.id}/edit`} className="btn-ghost -mr-2">
-          <PencilIcon size={16} /> Edit
-        </Link>
+        <ActionMenu
+          label="Trip actions"
+          items={[
+            { label: "Edit trip", Icon: PencilIcon, href: `/trips/${trip.id}/edit` },
+            { label: "Trip summary", Icon: ReportIcon, href: `/trips/${trip.id}/summary` },
+            active
+              ? { label: "Close trip", Icon: CheckIcon, onClick: () => setConfirm("close") }
+              : {
+                  label: "Reopen trip",
+                  Icon: UndoIcon,
+                  onClick: () => {
+                    reopenTrip(trip.id);
+                    showToast("Trip reopened");
+                  },
+                },
+            { label: "Delete trip", Icon: TrashIcon, onClick: () => setConfirm("delete"), danger: true },
+          ]}
+        />
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -51,35 +67,12 @@ export default function TripDetailPage() {
             expenses={expenses}
             action={active ? <AddExpenseButton tripId={trip.id} variant="inline" /> : undefined}
           />
-
-          <div className="grid grid-cols-2 gap-3">
-            <Link href={`/trips/${trip.id}/summary`} className={active ? "btn-secondary" : "btn-primary col-span-2 h-14"}>
-              <ReportIcon size={18} /> {active ? "Summary" : "View Trip Summary"}
+          {/* A closed trip's main next step is its summary, so that one stays visible. */}
+          {!active && (
+            <Link href={`/trips/${trip.id}/summary`} className="btn-primary h-14 w-full">
+              <ReportIcon size={18} /> View Trip Summary
             </Link>
-            {active ? (
-              <button type="button" onClick={() => setConfirm("close")} className="btn-secondary">
-                <CheckIcon size={18} /> Close Trip
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  reopenTrip(trip.id);
-                  showToast("Trip reopened");
-                }}
-                className="btn-secondary"
-              >
-                Reopen Trip
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setConfirm("delete")}
-              className={`btn-danger-outline ${active ? "col-span-2" : ""}`}
-            >
-              <TrashIcon size={18} /> Delete
-            </button>
-          </div>
+          )}
         </div>
 
         <section>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PlusIcon } from "@/components/Icons";
 import { Loading } from "@/components/States";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { TripCard } from "@/components/TripCard";
 import { tripExpenses } from "@/lib/calc";
 import { useAppData } from "@/lib/storage";
@@ -60,6 +61,12 @@ export default function TripsPage() {
           <TripGrid title="Completed" trips={completed} data={data} />
         </>
       )}
+
+      {/* The side menu has this switch on tablet/desktop. */}
+      <section className="card p-4 md:hidden">
+        <h2 className="section-title mb-3">Appearance</h2>
+        <ThemeSwitcher />
+      </section>
     </div>
   );
 }

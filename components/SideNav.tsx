@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PlusIcon } from "./Icons";
 import { NAV_ITEMS, isNavActive } from "./NavLinks";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 /** Tablet/desktop navigation on the left. Hidden on phones. */
 export function SideNav() {
@@ -42,9 +43,13 @@ export function SideNav() {
         </ul>
       </nav>
 
-      <p className="mt-auto px-2 text-xs leading-relaxed text-faint">
-        Your trips are saved on this device only.
-      </p>
+      <div className="mt-auto space-y-3">
+        <div>
+          <div className="mb-2 px-2 text-xs font-semibold tracking-wide text-faint uppercase">Appearance</div>
+          <ThemeSwitcher />
+        </div>
+        <p className="px-2 text-xs leading-relaxed text-faint">Your trips are saved on this device only.</p>
+      </div>
     </aside>
   );
 }

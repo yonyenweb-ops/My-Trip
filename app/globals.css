@@ -35,22 +35,52 @@
   color-scheme: light;
 }
 
+/* Dark mode is opt-in (Appearance: Dark, or Auto + phone in dark mode). Soft navy, not black. */
+:root[data-theme="dark"] {
+  --app: #172033;
+  --card: #1f2a3f;
+  --ink: #edf1f7;
+  --muted: #a8b3c5;
+  --faint: #76839a;
+  --line: #2f3c54;
+  --soft: #28344b;
+  --brand: #059669;
+  --brand-strong: #047857;
+  --brand-soft: #16403b;
+  --brand-text: #4ade9f;
+  --danger: #f87171;
+  --danger-soft: #3b2433;
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --app: #0b1211;
-    --card: #131c1b;
-    --ink: #e8efed;
-    --muted: #9aa8a5;
-    --faint: #66756f;
-    --line: #22302e;
-    --soft: #1b2624;
+  :root[data-theme="system"] {
+    --app: #172033;
+    --card: #1f2a3f;
+    --ink: #edf1f7;
+    --muted: #a8b3c5;
+    --faint: #76839a;
+    --line: #2f3c54;
+    --soft: #28344b;
     --brand: #059669;
     --brand-strong: #047857;
-    --brand-soft: #10271f;
-    --brand-text: #34d399;
+    --brand-soft: #16403b;
+    --brand-text: #4ade9f;
     --danger: #f87171;
-    --danger-soft: #2b1718;
+    --danger-soft: #3b2433;
     color-scheme: dark;
+  }
+}
+
+/* Tailwind's dark: classes follow the chosen Appearance instead of only the phone setting. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
   }
 }
 
