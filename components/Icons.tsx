@@ -128,13 +128,6 @@ export const UndoIcon = (p: IconProps) => (
   </Icon>
 );
 
-export const MicIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <rect x="9" y="2" width="6" height="12" rx="3" />
-    <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" />
-  </Icon>
-);
-
 export const CloseIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M6 6l12 12M18 6 6 18" />

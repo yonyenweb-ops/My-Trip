@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import { dayLabel, formatTime, nowTime, splitDateTime, todayDate } from "@/lib/dates";
 import {
@@ -16,16 +16,12 @@ import { showToast } from "@/lib/toast";
 import type { Expense } from "@/lib/types";
 import { CalendarIcon, TrashIcon } from "./Icons";
 import { MoneyInput } from "./MoneyInput";
-import { VoiceBar } from "./VoiceBar";
-import { parseVoiceExpense } from "@/lib/voice";
-import { useVoiceResult } from "@/lib/voice-session";
 
 type Props = {
   tripId: string;
   expense?: Expense; // when set, the form edits this expense
   onDone: () => void;
   onDelete?: () => void; // edit mode: ask to delete this expense
-  startedWithVoice?: boolean; // opened from the 🎤 button: don't pop up the keyboard
 };
 
 type Errors = Partial<Record<"amount" | "category" | "date", string>>;
@@ -35,7 +31,7 @@ const QUICK: Record<Currency, number[]> = {
   KHR: [1000, 2000, 5000, 10000, 20000],
 };
 
-export function ExpenseForm({ tripId, expense, onDone, onDelete, startedWithVoice }: Props) {
+export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
   const initial = expense ? splitDateTime(expense.date) : { date: todayDate(), time: nowTime() };
   const [currency, setCurrency] = useState<Currency>(expense?.original ? "KHR" : "USD");
   const [amount, setAmount] = useState<string>(
@@ -47,28 +43,6 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete, startedWithVoic
   const [time, setTime] = useState(initial.time);
   const [editingDate, setEditingDate] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
-
-  const [voiceNote, setVoiceNote] = useState<string>();
-
-  // Fill the form from a spoken sentence. The user still reviews and taps Add Expense.
-  const applyVoice = useCallback((text: string) => {
-    const v = parseVoiceExpense(text);
-    if (v.amount && v.currency) {
-      setCurrency(v.currency);
-      setAmount(v.amount);
-    }
-    if (v.category) setCategory(v.category);
-    if (v.description) setDescription(v.description);
-    setErrors({});
-    setVoiceNote(
-      !v.amount
-        ? "Didn't catch a price. Type it in, or tap 🎤 again."
-        : !v.category
-          ? "Pick a category, then tap Add Expense."
-          : undefined,
-    );
-  }, []);
-  useVoiceResult(applyVoice);
 
   // Riel keeps the rate it was saved with; new riel entries use today's fixed rate.
   const rate = expense?.original?.rate ?? KHR_PER_USD;
@@ -108,8 +82,6 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete, startedWithVoic
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5">
-      {!expense && <VoiceBar note={voiceNote} />}
-
       <MoneyInput
         id="amount"
         label="Amount"
@@ -123,7 +95,7 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete, startedWithVoic
         suggestions={QUICK}
         rate={rate}
         error={errors.amount}
-        autoFocus={!startedWithVoice}
+        autoFocus
       />
 
       {/* Category */}
