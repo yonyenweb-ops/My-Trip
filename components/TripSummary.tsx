@@ -3,6 +3,7 @@ import { getCategory } from "@/lib/categories";
 import { formatDate, formatDateRange, todayDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import type { Expense, Trip } from "@/lib/types";
+import { TripPhoto } from "./TripPhoto";
 
 function Row({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
@@ -40,6 +41,7 @@ export function TripSummary({ trip, expenses }: { trip: Trip; expenses: Expense[
 
   return (
     <article className="space-y-5">
+      {trip.photo && <TripPhoto photoId={trip.photo} className="h-44 rounded-[28px] sm:h-60" />}
       <header className="text-center">
         <p className="text-xs font-bold tracking-[0.2em] text-faint">TRIP SUMMARY</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight">{trip.name}</h1>

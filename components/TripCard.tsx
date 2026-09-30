@@ -4,6 +4,7 @@ import { formatDateRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import type { Expense, Trip } from "@/lib/types";
 import { ChevronRightIcon } from "./Icons";
+import { TripPhoto } from "./TripPhoto";
 
 export function StatusBadge({ status }: { status: Trip["status"] }) {
   return status === "active" ? (
@@ -21,8 +22,9 @@ export function TripCard({ trip, expenses }: { trip: Trip; expenses: Expense[] }
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="card group flex h-full flex-col p-4 transition hover:border-brand/40 hover:shadow-sm active:scale-[0.99] sm:p-5"
+      className="card group flex h-full flex-col overflow-hidden p-4 transition hover:border-brand/40 hover:shadow-sm active:scale-[0.99] sm:p-5"
     >
+      {trip.photo && <TripPhoto photoId={trip.photo} className="-mx-4 -mt-4 mb-4 h-32 sm:-mx-5 sm:-mt-5" />}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="truncate text-lg font-bold">{trip.name}</div>

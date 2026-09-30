@@ -6,6 +6,7 @@ import { ExpenseList } from "@/components/ExpenseList";
 import { PlusIcon } from "@/components/Icons";
 import { Loading } from "@/components/States";
 import { TripOverview } from "@/components/TripOverview";
+import { TripCover } from "@/components/TripPhoto";
 import { currentTrip, tripExpenses } from "@/lib/calc";
 import { formatDateRange } from "@/lib/dates";
 import { useAppData } from "@/lib/storage";
@@ -42,16 +43,34 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="mb-5 flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-muted">Current trip</p>
-          <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">{trip.name}</h1>
-          <p className="text-sm text-muted">{formatDateRange(trip.startDate, trip.endDate)}</p>
-        </div>
-        <Link href={`/trips/${trip.id}`} className="btn-ghost -mr-2 shrink-0 text-brand-text">
-          Details →
-        </Link>
-      </header>
+      {trip.photo ? (
+        <TripCover photoId={trip.photo}>
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white/80">Current trip</p>
+              <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">{trip.name}</h1>
+              <p className="text-sm text-white/85">{formatDateRange(trip.startDate, trip.endDate)}</p>
+            </div>
+            <Link
+              href={`/trips/${trip.id}`}
+              className="shrink-0 rounded-xl bg-white/20 px-3 py-2 text-sm font-semibold backdrop-blur hover:bg-white/30"
+            >
+              Details →
+            </Link>
+          </div>
+        </TripCover>
+      ) : (
+        <header className="mb-5 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-muted">Current trip</p>
+            <h1 className="truncate text-2xl font-bold tracking-tight md:text-3xl">{trip.name}</h1>
+            <p className="text-sm text-muted">{formatDateRange(trip.startDate, trip.endDate)}</p>
+          </div>
+          <Link href={`/trips/${trip.id}`} className="btn-ghost -mr-2 shrink-0 text-brand-text">
+            Details →
+          </Link>
+        </header>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="lg:sticky lg:top-8">

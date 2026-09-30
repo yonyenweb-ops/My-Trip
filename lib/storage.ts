@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { deletePhoto } from "./photos";
 import type { AppData, Expense, Trip } from "./types";
 
 const STORAGE_KEY = "trip-money-manager";
@@ -59,7 +60,7 @@ const newId = () =>
 
 // ---- Trips ----
 
-export type TripInput = Pick<Trip, "name" | "startingAmount" | "original" | "startDate" | "endDate" | "note">;
+export type TripInput = Pick<Trip, "name" | "startingAmount" | "original" | "startDate" | "endDate" | "note" | "photo">;
 
 export function createTrip(input: TripInput): string {
   const data = read();
@@ -82,6 +83,8 @@ export const reopenTrip = (id: string) => patchTrip(id, { status: "active", clos
 
 export function deleteTrip(id: string) {
   const data = read();
+  const photo = data.trips.find((t) => t.id === id)?.photo;
+  if (photo) deletePhoto(photo);
   write({
     trips: data.trips.filter((t) => t.id !== id),
     expenses: data.expenses.filter((e) => e.tripId !== id),

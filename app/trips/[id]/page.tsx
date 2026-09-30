@@ -11,6 +11,7 @@ import { CheckIcon, PencilIcon, ReportIcon, TrashIcon, UndoIcon } from "@/compon
 import { BackLink, Loading, TripNotFound } from "@/components/States";
 import { StatusBadge } from "@/components/TripCard";
 import { TripOverview } from "@/components/TripOverview";
+import { TripPhoto } from "@/components/TripPhoto";
 import { formatDateRange } from "@/lib/dates";
 import { closeTrip, deleteTrip, reopenTrip } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
@@ -30,6 +31,8 @@ export default function TripDetailPage() {
   return (
     <>
       <BackLink href="/trips" label="My Trips" />
+
+      {trip.photo && <TripPhoto photoId={trip.photo} className="mb-4 h-44 rounded-[28px] sm:h-56" />}
 
       <header className="mb-5 flex items-start justify-between gap-3">
         <div className="min-w-0">

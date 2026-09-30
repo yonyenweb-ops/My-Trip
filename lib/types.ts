@@ -11,6 +11,7 @@ export interface Trip {
   startDate: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
   note?: string;
+  photo?: string; // id of the cover photo in IndexedDB (see lib/photos.ts)
   status: TripStatus;
   createdAt: string;
   updatedAt: string;
