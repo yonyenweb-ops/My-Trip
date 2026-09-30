@@ -24,7 +24,9 @@ type Props = {
   onDelete?: () => void; // edit mode: ask to delete this expense
 };
 
-type Errors = Partial<Record<"amount" | "category" | "date", string>>;
+type Errors = Partial<Record<"amount" | "date", string>>;
+
+const FALLBACK_CATEGORY = "Other";
 
 const QUICK: Record<Currency, number[]> = {
   USD: [1, 2, 5, 10, 20],
@@ -52,7 +54,6 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
     e.preventDefault();
     const next: Errors = {};
     if (cents === null) next.amount = moneyInputError(currency, riel, "10 or 2.50");
-    if (!category) next.category = "Pick a category";
     if (!date) {
       next.date = "Date is required";
       setEditingDate(true);
@@ -62,7 +63,8 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
 
     const input = {
       amount: cents,
-      category,
+      // Category is optional so an expense can be added with just the amount.
+      category: category || FALLBACK_CATEGORY,
       description: description.trim(),
       date: `${date}T${time || "00:00"}`,
       original: riel !== null ? { currency: "KHR" as const, amount: riel, rate } : undefined,
@@ -72,7 +74,7 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
       showToast("Changes saved");
     } else {
       const id = addExpense(tripId, input);
-      showToast(`Added ${input.description || category} −${formatMoney(cents)}`, {
+      showToast(`Added ${input.description || input.category} −${formatMoney(cents)}`, {
         label: "Undo",
         onClick: () => deleteExpense(id),
       });
@@ -100,7 +102,9 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
 
       {/* Category */}
       <fieldset>
-        <legend className="label">Category</legend>
+        <legend className="label">
+          Category <span className="font-normal text-faint">(optional, else “{FALLBACK_CATEGORY}”)</span>
+        </legend>
         <div className="grid grid-cols-4 gap-2">
           {CATEGORIES.map((c) => {
             const selected = category === c.name;
@@ -108,10 +112,8 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
               <button
                 key={c.name}
                 type="button"
-                onClick={() => {
-                  setCategory(c.name);
-                  setErrors((e) => ({ ...e, category: undefined }));
-                }}
+                // Tapping the selected category again unselects it.
+                onClick={() => setCategory(selected ? "" : c.name)}
                 aria-pressed={selected}
                 className={`flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2 text-[11px] leading-tight font-semibold transition-colors ${
                   selected
@@ -127,7 +129,6 @@ export function ExpenseForm({ tripId, expense, onDone, onDelete }: Props) {
             );
           })}
         </div>
-        {errors.category && <p className="error">{errors.category}</p>}
       </fieldset>
 
       {/* Description */}
