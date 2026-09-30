@@ -7,21 +7,23 @@ import { AddExpenseButton } from "@/components/AddExpenseButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ExpenseList } from "@/components/ExpenseList";
 import { ActionMenu } from "@/components/ActionMenu";
-import { CheckIcon, PencilIcon, ReportIcon, TrashIcon, UndoIcon } from "@/components/Icons";
+import { CameraIcon, CheckIcon, CloseIcon, PencilIcon, ReportIcon, TrashIcon, UndoIcon } from "@/components/Icons";
 import { BackLink, Loading, TripNotFound } from "@/components/States";
 import { StatusBadge } from "@/components/TripCard";
 import { TripOverview } from "@/components/TripOverview";
 import { TripPhoto } from "@/components/TripPhoto";
 import { formatDateRange } from "@/lib/dates";
-import { closeTrip, deleteTrip, reopenTrip } from "@/lib/storage";
+import { closeTrip, deleteTrip, reopenTrip, setTripPhoto } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 import { useTrip } from "@/lib/useTrip";
+import { useTripPhotoPicker } from "@/lib/useTripPhotoPicker";
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const state = useTrip(id);
-  const [confirm, setConfirm] = useState<"close" | "delete" | null>(null);
+  const [confirm, setConfirm] = useState<"close" | "delete" | "removePhoto" | null>(null);
+  const photoPicker = useTripPhotoPicker(id);
 
   if (state.loading) return <Loading />;
   const { trip, expenses } = state;
@@ -31,6 +33,7 @@ export default function TripDetailPage() {
   return (
     <>
       <BackLink href="/trips" label="My Trips" />
+      {photoPicker.input}
 
       {trip.photo && <TripPhoto photoId={trip.photo} className="mb-4 h-44 rounded-[28px] sm:h-56" />}
 
@@ -48,6 +51,9 @@ export default function TripDetailPage() {
           items={[
             { label: "Edit trip", Icon: PencilIcon, href: `/trips/${trip.id}/edit` },
             { label: "Trip summary", Icon: ReportIcon, href: `/trips/${trip.id}/summary` },
+            // Photos live here, not in the trip form, to keep that form focused.
+            { label: trip.photo ? "Change photo" : "Add photo", Icon: CameraIcon, onClick: photoPicker.choose },
+            ...(trip.photo ? [{ label: "Remove photo", Icon: CloseIcon, onClick: () => setConfirm("removePhoto") }] : []),
             active
               ? { label: "Close trip", Icon: CheckIcon, onClick: () => setConfirm("close") }
               : {
@@ -105,6 +111,20 @@ export default function TripDetailPage() {
           onConfirm={() => {
             closeTrip(trip.id);
             router.push(`/trips/${trip.id}/summary`);
+          }}
+        />
+      )}
+      {confirm === "removePhoto" && (
+        <ConfirmDialog
+          title="Remove photo?"
+          message="The trip keeps all its money and expenses. Only the photo is removed."
+          confirmLabel="Remove"
+          danger
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => {
+            setTripPhoto(trip.id, undefined);
+            setConfirm(null);
+            showToast("Photo removed");
           }}
         />
       )}

@@ -60,7 +60,7 @@ const newId = () =>
 
 // ---- Trips ----
 
-export type TripInput = Pick<Trip, "name" | "startingAmount" | "original" | "startDate" | "endDate" | "note" | "photo">;
+export type TripInput = Pick<Trip, "name" | "startingAmount" | "original" | "startDate" | "endDate" | "note">;
 
 export function createTrip(input: TripInput): string {
   const data = read();
@@ -78,6 +78,14 @@ function patchTrip(id: string, patch: Partial<Trip>) {
 }
 
 export const updateTrip = (id: string, input: TripInput) => patchTrip(id, input);
+
+/** Point a trip at a new photo (or none) and free the old photo's space. */
+export function setTripPhoto(id: string, photo: string | undefined) {
+  const old = read().trips.find((t) => t.id === id)?.photo;
+  patchTrip(id, { photo });
+  if (old && old !== photo) deletePhoto(old);
+}
+
 export const closeTrip = (id: string) => patchTrip(id, { status: "completed", closedAt: now() });
 export const reopenTrip = (id: string) => patchTrip(id, { status: "active", closedAt: undefined });
 

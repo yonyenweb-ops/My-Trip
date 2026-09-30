@@ -5,11 +5,9 @@ import { todayDate } from "@/lib/dates";
 import { KHR_PER_USD, centsToInput, moneyInputError, parseMoneyInput, type Currency } from "@/lib/money";
 import type { TripInput } from "@/lib/storage";
 import type { Trip } from "@/lib/types";
-import { deletePhoto, newPhotoId, savePhoto } from "@/lib/photos";
 import { MoneyInput } from "./MoneyInput";
-import { PhotoPicker, type PhotoChoice } from "./PhotoPicker";
 
-type Errors = Partial<Record<"name" | "amount" | "startDate" | "endDate" | "photo", string>>;
+type Errors = Partial<Record<"name" | "amount" | "startDate" | "endDate", string>>;
 
 type Props = {
   trip?: Trip; // when set, the form edits this trip
@@ -30,14 +28,12 @@ export function TripForm({ trip, submitLabel, suggestions, onSubmit }: Props) {
   const [endDate, setEndDate] = useState(trip?.endDate ?? "");
   const [note, setNote] = useState(trip?.note ?? "");
   const [errors, setErrors] = useState<Errors>({});
-  const [photo, setPhoto] = useState<PhotoChoice>({ kind: "keep" });
-  const [saving, setSaving] = useState(false);
 
   // A riel budget keeps the rate it was saved with; new riel budgets use today's fixed rate.
   const rate = trip?.original?.rate ?? KHR_PER_USD;
   const { riel, cents } = parseMoneyInput(currency, amount, rate);
 
-  async function submit(e: FormEvent) {
+  function submit(e: FormEvent) {
     e.preventDefault();
     const next: Errors = {};
     if (!name.trim()) next.name = "Trip name is required";
@@ -47,23 +43,6 @@ export function TripForm({ trip, submitLabel, suggestions, onSubmit }: Props) {
     setErrors(next);
     if (cents === null || Object.keys(next).length) return;
 
-    // Save a newly picked photo first, so the trip never points at a photo that isn't stored.
-    let photoId = trip?.photo;
-    if (photo.kind === "new") {
-      setSaving(true);
-      try {
-        photoId = newPhotoId();
-        await savePhoto(photoId, photo.blob);
-        URL.revokeObjectURL(photo.url);
-      } catch {
-        setSaving(false);
-        setErrors({ photo: "Couldn't save the photo. Remove it or try another one." });
-        return;
-      }
-    } else if (photo.kind === "none") {
-      photoId = undefined;
-    }
-
     onSubmit({
       name: name.trim(),
       startingAmount: cents,
@@ -71,10 +50,7 @@ export function TripForm({ trip, submitLabel, suggestions, onSubmit }: Props) {
       startDate,
       endDate: endDate || undefined,
       note: note.trim() || undefined,
-      photo: photoId,
     });
-    // The old photo was replaced or removed: free its space.
-    if (trip?.photo && trip.photo !== photoId) deletePhoto(trip.photo);
   }
 
   return (
@@ -160,13 +136,8 @@ export function TripForm({ trip, submitLabel, suggestions, onSubmit }: Props) {
         />
       </div>
 
-      <div>
-        <PhotoPicker savedPhotoId={trip?.photo} value={photo} onChange={setPhoto} />
-        {errors.photo && <p className="error">{errors.photo}</p>}
-      </div>
-
-      <button type="submit" disabled={saving} className="btn-primary h-14 w-full text-lg">
-        {saving ? "Saving…" : submitLabel}
+      <button type="submit" className="btn-primary h-14 w-full text-lg">
+        {submitLabel}
       </button>
     </form>
   );
